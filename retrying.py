@@ -69,7 +69,9 @@ class Retrying(object):
                  stop_func=None,
                  wait_func=None,
                  wait_jitter_max=None,
-                 logger=None):
+                 logger=None,
+                 logger_fmt_string=None,
+                 logger_fmt_string_kwargs=None):
 
         self._stop_max_attempt_number = 5 if stop_max_attempt_number is None else stop_max_attempt_number
         self._stop_max_delay = 100 if stop_max_delay is None else stop_max_delay
@@ -82,6 +84,12 @@ class Retrying(object):
         self._wait_exponential_max = MAX_WAIT if wait_exponential_max is None else wait_exponential_max
         self._wait_jitter_max = 0 if wait_jitter_max is None else wait_jitter_max
         self._logger = logger
+        self._logger_fmt_string = logger_fmt_string
+
+        if logger_fmt_string_kwargs is None:
+            logger_fmt_string_kwargs = {}
+        else:
+            self._logger_fmt_string_kwargs = logger_fmt_string_kwargs
 
         # TODO add chaining of stop behaviors
         # stop behavior
@@ -222,8 +230,15 @@ class Retrying(object):
 
                 sleep /= 1000.0
                 if self._logger is not None:
-                    self._logger.warn(
-                        '%s, retrying in %f seconds...', attempt, sleep)
+                    if self._logger_fmt_string is not None:
+                        self._logger.warn(
+                            self._logger_fmt_string.format(
+                                ATTEMPT=attempt,
+                                SLEEP=sleep,
+                                **self._logger_fmt_string_kwargs))
+                    else:
+                        self._logger.warn(
+                            '%s, retrying in %f seconds...', attempt, sleep)
 
                 time.sleep(sleep)
 
